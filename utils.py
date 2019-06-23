@@ -1,7 +1,6 @@
 def get_dataframe_from_csv(filename, header_row=None):
     """
     input filename (full path) and returns dataframe with data
-
     TO DO:
         -: As of now reading headerless files with header = None, what if the data has a header, how to deal with that
         -: Should the last coloumn name be replaced with "label"?
@@ -36,6 +35,7 @@ def induce_missingness(dataframe, perc_variables_sampled=0.5, threshold=0.2, log
     import pandas as pd
     import numpy as np
     assert isinstance(dataframe, pd.DataFrame)
+    import pandas as pd
     import logging
     logger = logging.getLogger()
     logger.setLevel(logger_level)
@@ -58,7 +58,7 @@ def induce_missingness(dataframe, perc_variables_sampled=0.5, threshold=0.2, log
 
     logging.info(" Returning new dataframe with missingness(MCAR) induced")
 
-    perc_of_nans = 1 - sum(len(new_df) - new_df.count()) / len(new_df)
+    perc_of_nans = sum((len(new_df) - new_df.count())) / new_df.size
     logging.info(f" Percentage of NaNs in returned dataframe : {perc_of_nans * 100:.2f}")
 
     return new_df
@@ -67,14 +67,11 @@ def induce_missingness(dataframe, perc_variables_sampled=0.5, threshold=0.2, log
 def create_train_test_split(dataframe, test_perc=0.3, logger_level=20):
     """
     Steps:
-
     1. Induce missingness in the dataframe <use induce_missingness>
     2. Split the resultant dataframe into train, test sets
     3. Return both along with a third - test set without missingness
-
     TO DO:
         -: Figure out better way to extract elements via indexing
-
     """
     import pandas as pd
     import numpy as np
@@ -108,17 +105,15 @@ def create_train_test_split(dataframe, test_perc=0.3, logger_level=20):
 if __name__ == "__main__":
     filename = "data/shuttle/shuttle_trn"
     train_df = get_dataframe_from_csv(filename).iloc[:, :-1]  # remove label
-    #print(train_df.head())
+    print(train_df.head())
 
-    # df1 = train_df[:]
-    # df2 = induce_missingness(df1, logger_level=20)
-    # print(df1.head())
-    # print(df2.head())
+    df1 = train_df[:]
+    df2 = induce_missingness(df1, logger_level=20)
+    print(df1.head())
+    print(df2.head())
 
     # Test
     a, b, c = create_train_test_split(df1)
     print(a.head())
     print(b.head())
     print(c.head())
-
-
