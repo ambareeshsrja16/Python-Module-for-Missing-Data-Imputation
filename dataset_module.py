@@ -16,10 +16,13 @@ class DataSetForImputation(td.Dataset):
     :- Data Normalization between 0 and 1?
     """
 
-    def __init__(self, dataframe):
+    def __init__(self, dataframe, normalize=False):
         super().__init__()
         self.perc_of_nans = sum((len(dataframe) - dataframe.count())) / dataframe.size
         self.dataframe = dataframe.apply(lambda x: x.fillna(x.mean()), axis=0)  # Replacing NaNs with mean value
+        
+        if normalize:  #Normalize dataframe elements to [0,1] -> Dividing my coloumn sum
+            self.dataframe = self.dataframe/self.dataframe.sum(0)
         # TODO:
         #  Categorical variables?
         #  https://stackoverflow.com/questions/32718639/pandas-filling-nans-in-categorical-data
