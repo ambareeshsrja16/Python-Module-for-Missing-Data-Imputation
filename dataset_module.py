@@ -21,8 +21,8 @@ class DataSetForImputation(td.Dataset):
         self.perc_of_nans = sum((len(dataframe) - dataframe.count())) / dataframe.size
         self.dataframe = dataframe.apply(lambda x: x.fillna(x.mean()), axis=0)  # Replacing NaNs with mean value
         
-        if normalize:  #Normalize dataframe elements to [0,1] -> Dividing my coloumn sum
-            self.dataframe = self.dataframe/self.dataframe.sum(0)
+        if normalize:  #Normalize dataframe elements to [0,1] -> Dividing my range
+            self.dataframe = (self.dataframe- self.dataframe.min())/(self.dataframe.max()-self.dataframe.min())
         # TODO:
         #  Categorical variables?
         #  https://stackoverflow.com/questions/32718639/pandas-filling-nans-in-categorical-data
