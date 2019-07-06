@@ -28,7 +28,7 @@ class DenoisingAutoEncoder(nn.Module):
             self.linear_layer_list.append(nn.Linear(*in_out_pair))
 
     def forward(self, x):
-
+        x = x.float()
         h = self.drop_layer(x)
         for layer in self.linear_layer_list[:-1]:
             h = torch.tanh(layer(h))

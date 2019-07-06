@@ -102,6 +102,38 @@ def create_train_test_split(dataframe, test_perc=0.3, logger_level=20):
     return train_df, test_df, full_test_df
 
 
+def plot_loss_curve(filename = "DAE_Arch_N_7_ImputeOnlyNaNs_WithDropout/artifacts/loss_curve", title = "DAE_Arch_N_7_ImputeOnlyNaNs_WithDropout", freq = 1):
+    """
+    filename: model_name+"/artifacts/loss_curve"
+    Plot the Loss vs Epoch curve   
+    freq = 10 : Plotting values for every 10th epoch
+    """
+    assert isinstance(filename, str)
+    assert isinstance(title, str)
+    
+    import matplotlib.pyplot as plt
+    import numpy as np
+    
+    with open(filename,"r") as f:
+        data = f.readlines()
+    
+    x = np.zeros(len(data))
+    y = np.zeros_like(x)
+    
+    for i, item in enumerate(data):  #item ="Epoch_number: 0 Loss: 16.3756"
+        data_elem = item.split()
+        x[i] = int(data_elem[1])
+        y[i] = float(data_elem[3])
+    
+    fig, ax = plt.subplots()
+    ax.set_title(title)
+    ax.set_ylabel("Loss")
+    ax.set_xlabel("Epochs")
+    plt.plot(x[::freq],y[::freq])
+    plt.show()
+
+
+
 if __name__ == "__main__":
     filename = "data/shuttle/shuttle_trn"
     train_df = get_dataframe_from_csv(filename).iloc[:, :-1]  # remove label

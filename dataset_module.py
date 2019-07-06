@@ -18,8 +18,12 @@ class DataSetForImputation(td.Dataset):
 
     def __init__(self, dataframe, normalize=False):
         super().__init__()
+        self.orig_dataset = dataframe
         self.perc_of_nans = sum((len(dataframe) - dataframe.count())) / dataframe.size
+        
         self.dataframe = dataframe.apply(lambda x: x.fillna(x.mean()), axis=0)  # Replacing NaNs with mean value
+        self.max_df = self.dataframe.max() 
+        self.min_df = self.dataframe.min()
         
         if normalize:  #Normalize dataframe elements to [0,1] -> Dividing my range
             self.dataframe = (self.dataframe- self.dataframe.min())/(self.dataframe.max()-self.dataframe.min())
@@ -41,7 +45,17 @@ class DataSetForImputation(td.Dataset):
         # convert to tensor
         # check https://stackoverflow.com/questions/50307707/convert-pandas-dataframe-to-pytorch-tensor
         return datapoint, datapoint  # label and datapoint are the same
-
+    
+    def get_denormalized_data(self, norm_x):
+        """Return x after denormalizing it"""
+        
+        if isinstance(norm_x, torch.Tensor):
+            if len(norm_x.shape)==1:
+                norm_x = norm_x.unsqueeze(0)
+            norm_x = norm_x.detach().cpu().numpy()
+         
+        x = pd.DataFrame(norm_x)*(self.max_df - self.min_df) + self.min_df
+        return x
 
 if __name__ == "__main__":
     np.random.seed(18)
