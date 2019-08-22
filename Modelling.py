@@ -14,11 +14,20 @@ class DenoisingAutoEncoder(nn.Module):
     -: Should Batch Normalization be added?
     """
 
-    def __init__(self, num_variables, theta=7, input_dropout=0.5, logger_level=10):
+    def __init__(self, num_variables, theta=7, input_dropout=0.5, dropout_at_layers = [0], logger_level=10):
+        """
+        dropout_at_layers => The layers of the NN where dropout needs to be added
+        dropout_at_layers = [0] -> adds dropout to only the input layer
+        dropout_at_layers = [0, 1] -> adds dropout to input and first layer etc..
+        
+        """
         super().__init__()
         self.n = num_variables  # n will be the number of input features to the first layer
 
         self.drop_layer = nn.Dropout(p=input_dropout)  # Stochastic input distortion (50%)
+        self.dropout_at_layers = list(set(sorted(dropout_at_layers))) #remove duplicates, ascending in order 
+        assert set(self.dropout_at_layers).issubset([0,1,2,3,4,5]),"Allowed => [0,1,2,3,4,5]"
+        
         units_per_layer = [self.n + i for i in (0, theta, theta * 2, theta * 3, theta * 2, theta * 1, 0)]
         zip_list = list(zip(units_per_layer, units_per_layer[1:]))
         # [(100, 107), (107, 114), (114, 121), (121, 114), (114, 107), (107, 100)] for n=100
@@ -29,9 +38,14 @@ class DenoisingAutoEncoder(nn.Module):
 
     def forward(self, x):
         x = x.float()
-        h = self.drop_layer(x)
-        for layer in self.linear_layer_list[:-1]:
+        h = x
+        if 0 in self.dropout_at_layers: #Dropout at input layer
+            h = self.drop_layer(x)
+            
+        for index, layer in enumerate(self.linear_layer_list[:-1], start = 1):
             h = torch.tanh(layer(h))
+            if index in self.dropout_at_layers: # Applying dropout after activation
+                h = self.drop_layer(h)
 
         output = self.linear_layer_list[-1](h)
         return output
@@ -41,7 +55,6 @@ if __name__ == "__main__":
     np.random.seed(18)
     test = torch.rand(1,4,5)
     print("Test\n",test)
-    net = DenoisingAutoEncoder(5)
+    net = DenoisingAutoEncoder(num_variables=5)
     print("Output")
     print(net(test))
-

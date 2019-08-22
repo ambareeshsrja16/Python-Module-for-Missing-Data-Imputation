@@ -1,4 +1,4 @@
-def get_dataframe_from_csv(filename, header_row=None):
+def get_dataframe_from_csv(filename, header_row=0, sep='\s+'):
     """
     input filename (full path) and returns dataframe with data
     TO DO:
@@ -14,11 +14,7 @@ def get_dataframe_from_csv(filename, header_row=None):
     logger.setLevel(logging.DEBUG)
 
     logging.info("Input filename has to be space separated data")
-
-    if not header_row:
-        data_orig = pd.read_csv(filename, delim_whitespace=True, header=header_row)
-    else:
-        data_orig = pd.read_csv(filename,delim_whitespace=True)
+    data_orig = pd.read_csv(filename, sep=sep, header=header_row)
     return data_orig
 
 
@@ -40,7 +36,7 @@ def induce_missingness(dataframe, perc_variables_sampled=0.5, threshold=0.2, log
     logger = logging.getLogger()
     logger.setLevel(logger_level)
 
-    RANDOM_SEED = 18
+    RANDOM_SEED = 19
     np.random.seed(RANDOM_SEED)  # Reproducibility
 
     observations_number, variables_number = dataframe.shape[0], dataframe.shape[1]
@@ -49,7 +45,7 @@ def induce_missingness(dataframe, perc_variables_sampled=0.5, threshold=0.2, log
     sampled_variables = list(sampled_dataframe.columns)
     sampled_dataframe["random"] = np.random.uniform(size=observations_number)
 
-    new_df = dataframe[:]
+    new_df = dataframe.copy()
     new_df.loc[sampled_dataframe["random"] < threshold, sampled_variables] = np.NAN
 
     logging.debug(f"\n{new_df.head()}")
@@ -101,6 +97,19 @@ def create_train_test_split(dataframe, test_perc=0.3, logger_level=20):
     logging.info(" Note: full_test_df is the same as test_df but without NaNs")
     return train_df, test_df, full_test_df
 
+def convert_probabilities_to_one_hot(input_tensor, input_tensor_one_hot_indices):
+    """Given prediction, correct indices of one-hot-encoded variables =>
+    Returns predictions by rounding up the max probabilities to 1
+    Creates new copy, doesn't modify original"""
+    import torch
+    
+    #WRITE ASSERTS
+    input_t  = input_tensor
+    for i,j in input_tensor_one_hot_indices:
+        temp_ind = torch.argmax(input_t[i:j])
+        input_t[i:j]= 0.0
+        input_t[i+temp_ind] = 1.0
+    return input_t
 
 def plot_loss_curve(filename = "DAE_Arch_N_7_ImputeOnlyNaNs_WithDropout/artifacts/loss_curve", title = "DAE_Arch_N_7_ImputeOnlyNaNs_WithDropout", freq = 1):
     """
@@ -133,7 +142,58 @@ def plot_loss_curve(filename = "DAE_Arch_N_7_ImputeOnlyNaNs_WithDropout/artifact
     plt.show()
 
 
-
+def plot_train_and_val_loss_curves(filename1 = "DAE_Arch_N_7_ImputeOnlyNaNs_WithDropout/artifacts/loss_curve",
+                    filename2 = "DAE_Arch_N_7_ImputeOnlyNaNs_WithDropout/artifacts/val_loss_curve",
+                    title = "DAE_Arch_N_7_ImputeOnlyNaNs_WithDropout", annotation= None, freq = 1):
+    """
+    filename: model_name+"/artifacts/loss_curve"
+    Plot the Loss vs Epoch curve   
+    freq = 10 : Plotting values for every 10th epoch
+    """
+    assert isinstance(filename1, str)
+    assert isinstance(filename2, str)
+    assert isinstance(title, str)
+    
+    import matplotlib.pyplot as plt
+    import numpy as np
+    
+    with open(filename1,"r") as f:
+        data = f.readlines()
+    
+    with open(filename2,"r") as f:
+        data_val = f.readlines()
+    
+    x = np.zeros(len(data))
+    y = np.zeros_like(x)
+    
+    x_val = np.zeros(len(data_val))
+    y_val = np.zeros_like(x_val)
+    
+    for i, item in enumerate(data):  #item ="Epoch_number: 0 Loss: 16.3756"
+        data_elem = item.split()
+        x[i] = int(data_elem[1])
+        y[i] = float(data_elem[3])
+    
+    for i, item in enumerate(data_val):  #item ="Epoch_number: 0 Loss: 16.3756"
+        data_elem = item.split()
+        x_val[i] = int(data_elem[1])
+        y_val[i] = float(data_elem[3])
+    
+    fig, ax = plt.subplots()
+    ax.set_title(title)
+    ax.set_ylabel("Loss")
+    ax.set_xlabel("Epochs")
+    plt.plot(x[::freq],y[::freq], label= "Training Loss") #3rd arg for color '-b'
+    plt.plot(x_val[::freq], y_val[::freq], label = "Validation Loss")
+    plt.legend(loc='upper right')
+    
+    if annotation:
+        assert isinstance(annotation, str)
+        plt.annotate(annotation, xy=(0.3, 0.9), xycoords='axes fraction') #Dataset
+        
+    plt.show()
+      
+    
 if __name__ == "__main__":
     filename = "data/shuttle/shuttle_trn"
     train_df = get_dataframe_from_csv(filename).iloc[:, :-1]  # remove label
