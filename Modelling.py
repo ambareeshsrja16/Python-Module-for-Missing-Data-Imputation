@@ -1,6 +1,6 @@
 # Neural Net implementation using PyTorch
 # For more details visit: https://pytorch.org/tutorials/beginner/blitz/neural_networks_tutorial.html
-# Architectural details visit : https://arxiv.org/abs/1705.02737
+# Architectural details inspired from Denoising images : https://arxiv.org/abs/1705.02737
 
 import numpy as np
 import torch
